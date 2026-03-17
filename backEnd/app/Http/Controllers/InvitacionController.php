@@ -6,73 +6,73 @@ use App\Models\Invitado;
 use App\Models\Gift;
 use App\Models\Reservation;
 use Illuminate\Http\Request;
+use App\Helpers\ResponseHelper;
+use App\Enums\HttpsCodeEnum;
 
 class InvitacionController extends Controller
 {
-    /**
-     * Método privado para validar token
-     */
-    private function validarToken($token)
-    {
-        $invitado = Invitado::where('token', $token)->first();
 
-        if (!$invitado) {
-            abort(401, 'Token inválido');
-        }
 
-        return $invitado;
-    }
 
     /**
      * Validar invitación (cuando entra al link)
      */
 
-    public function validar($token)
+    public function GuesVerify($token)
     {
-        $token = trim($token); // 🔥 elimina espacios y saltos invisibles
+        $token = trim($token);
 
-        $invitado = Invitado::where('token', $token)->first();
-
-        if (!$invitado) {
-            return response()->json([
-                'valido' => false,
-                'mensaje' => 'Invitación inválida'
-            ], 404);
+        if (!$token) {
+            return ResponseHelper::response(HttpsCodeEnum::VALIDATION_ERROR);
         }
 
-        return response()->json([
-            'valido' => true,
-            'confirmado' => $invitado->confirmado,
-            'nombre' => $invitado->nombre_invitado
+        $guestWanted = $this->getGuestByToken($token);
+        if (!$guestWanted) {
+            return ResponseHelper::response(HttpsCodeEnum::NOT_FOUND);
+        }
+
+        return ResponseHelper::response(HttpsCodeEnum::SUCCESS, [
+            'nombre' => $guestWanted->nombre_invitado,
+            'confirmado' => $guestWanted->confirmado,
+            'role' => $guestWanted->role
         ]);
     }
 
 
+    private function getGuestByToken($token): ?Invitado
+    {
+        return Invitado::firstWhere('token', $token);
+    }
 
-    /**
-     * Confirmar asistencia
-     */
-    public function confirmar(Request $request)
+
+
+    public function confirm(Request $request)
     {
         $request->validate([
             'token' => 'required'
         ]);
 
-        $invitado = $this->validarToken($request->token);
+        $guest = $this->getGuestByToken($request->token);
 
-        if ($invitado->confirmado) {
-            return response()->json([
-                'mensaje' => 'Ya habías confirmado asistencia'
-            ]);
+        if (!$guest) {
+            return ResponseHelper::response(HttpsCodeEnum::NOT_FOUND);
         }
 
-        $invitado->confirmado = true;
-        $invitado->fecha_confirmacion = now();
-        $invitado->save();
+        if ($guest->confirmado) {
+            return ResponseHelper::response(
+                HttpsCodeEnum::ALREADY_EXISTS,
+                ['mensaje' => 'Ya habías confirmado asistencia']
+            );
+        }
 
-        return response()->json([
-            'mensaje' => 'Confirmación exitosa'
-        ]);
+        $guest->confirmado = true;
+        $guest->fecha_confirmacion = now();
+        $guest->save();
+
+        return ResponseHelper::response(
+            HttpsCodeEnum::SUCCESS,
+            ['mensaje' => 'Confirmación exitosa']
+        );
     }
 
     /**
