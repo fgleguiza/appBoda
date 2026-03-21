@@ -1,20 +1,32 @@
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { emailSchema } from "../Schema/EmailSchema";
+import type { EmailFormData } from "../Schema/EmailSchema";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import { useInvitation } from "../hooks/useInvitation";
 import { GiDiamondRing } from "react-icons/gi";
-import { RiEmotionLaughLine } from "react-icons/ri";
 
 export default function Confirm() {
-  const [email, setEmail] = useState("");
   const { guest } = useInvitation();
 
-  const handleConfirm = () => {
-    console.log(email);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<EmailFormData>({
+    resolver: zodResolver(emailSchema),
+  });
+
+  const handleConfirm = (data: EmailFormData) => {
+    console.log("Email:", data.email);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <form
+      onSubmit={handleSubmit(handleConfirm)}
+      className="min-h-screen flex items-center justify-center bg-gray-50"
+    >
       <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-md">
         {/* Encabezado */}
         <h1 className="text-3xl font-serif text-gray-800 mb-2 text-center">
@@ -39,23 +51,21 @@ export default function Confirm() {
 
         <p className="text-gray-600 mb-6">
           <span className="font-semibold">{guest?.nombre}</span>, con mucha
-          alegría queremos invitarte a celebrar nuestro casamiento. Nos
-          encantaría que nos acompañes en este día tan especial.
+          alegría queremos invitarte a celebrar nuestro casamiento.
         </p>
 
-        {/* Formulario */}
-        <div className="space-y-4 text-left">
-          <Input
-            label="Email"
-            type="email"
-            placeholder="tu@email.com"
-            value={email}
-            onChange={setEmail}
-          />
+        {/* Input */}
+        <Input
+          label="Email"
+          type="email"
+          placeholder="tu@email.com"
+          register={register("email")}
+          error={errors.email?.message}
+        />
 
-          <Button text="Confirmar asistencia" onClick={handleConfirm} />
-        </div>
+        {/* Botón */}
+        <Button text="Confirmar asistencia" type="submit" />
       </div>
-    </div>
+    </form>
   );
 }

@@ -9,7 +9,7 @@ use App\Http\Controllers\InvitacionController;
 use App\Http\Controllers\ReservationController;
 
 
-Route::get('/invitacion/{token}', [InvitacionController::class, 'GuesVerify']);
+Route::get('/verifyGuest/{token}', [InvitacionController::class, 'getVerifyGuest']);
 Route::post('/invitacion/confirmar', [InvitacionController::class, 'Confirm']);
 
 Route::middleware(['invitado.token', 'role:novio'])

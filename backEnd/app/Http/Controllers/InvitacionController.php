@@ -18,23 +18,27 @@ class InvitacionController extends Controller
      * Validar invitación (cuando entra al link)
      */
 
-    public function GuesVerify($token)
+    public function getVerifyGuest($token)
     {
         $token = trim($token);
-
+        $message = 'Falta el token de invitación';
         if (!$token) {
-            return ResponseHelper::response(HttpsCodeEnum::VALIDATION_ERROR);
+            return ResponseHelper::response(HttpsCodeEnum::VALIDATION_ERROR, $message);
         }
 
+        $message = 'No se encontró ningún invitado con ese token';
         $guestWanted = $this->getGuestByToken($token);
         if (!$guestWanted) {
-            return ResponseHelper::response(HttpsCodeEnum::NOT_FOUND);
+            return ResponseHelper::response(HttpsCodeEnum::NOT_FOUND, $message);
         }
 
-        return ResponseHelper::response(HttpsCodeEnum::SUCCESS, [
+        $stateConfirmation = $guestWanted->confirmado ? 'confirmado' : 'pendiente';
+        $message = 'Invitado encontrado correctamente';
+        return ResponseHelper::response(HttpsCodeEnum::SUCCESS, $message,  [
             'nombre' => $guestWanted->nombre_invitado,
             'confirmado' => $guestWanted->confirmado,
-            'role' => $guestWanted->role
+            'role' => $guestWanted->role,
+            'estado_confirmacion' => $stateConfirmation
         ]);
     }
 
@@ -49,7 +53,8 @@ class InvitacionController extends Controller
     public function confirm(Request $request)
     {
         $request->validate([
-            'token' => 'required'
+            'token' => 'required',
+            'email' => 'required|email'
         ]);
 
         $guest = $this->getGuestByToken($request->token);
@@ -64,7 +69,7 @@ class InvitacionController extends Controller
                 ['mensaje' => 'Ya habías confirmado asistencia']
             );
         }
-
+        $guest->email_invitado = $request->email;
         $guest->confirmado = true;
         $guest->fecha_confirmacion = now();
         $guest->save();
