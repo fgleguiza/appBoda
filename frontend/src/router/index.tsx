@@ -1,20 +1,17 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import Confirm from "../pages/Confirm"
-import Gifts from "../pages/Gifts"
-import InvitationGuard from "../guards/InvitationGuard"
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import SaveToDate from "../pages/saveToDate";
+import Gifts from "../pages/Gifts";
+import InvitationGuard from "../guards/InvitationGuard";
 
 export default function Router() {
-
   return (
     <BrowserRouter>
-
       <Routes>
-
         <Route
-          path="/confirmacion/:token"
+          path="confirm/:token"
           element={
             <InvitationGuard>
-              <Confirm />
+              <SaveToDate />
             </InvitationGuard>
           }
         />
@@ -28,8 +25,11 @@ export default function Router() {
           }
         />
 
+        <Route
+          path="/invitacion-invalida"
+          element={<div>Invitación inválida</div>}
+        />
       </Routes>
-
     </BrowserRouter>
-  )
+  );
 }

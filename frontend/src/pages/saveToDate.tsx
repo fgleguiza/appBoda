@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { emailSchema } from "../Schema/EmailSchema";
@@ -6,9 +8,12 @@ import Input from "../components/Input";
 import Button from "../components/Button";
 import { useInvitation } from "../hooks/useInvitation";
 import { GiDiamondRing } from "react-icons/gi";
+import { confirmGuestService } from "../services/confirmGuestService";
 
-export default function Confirm() {
+export default function saveToDate() {
   const { guest } = useInvitation();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const {
     register,
@@ -18,8 +23,22 @@ export default function Confirm() {
     resolver: zodResolver(emailSchema),
   });
 
-  const handleConfirm = (data: EmailFormData) => {
-    console.log("Email:", data.email);
+  const handleConfirm = async (data: EmailFormData) => {
+    try {
+      setLoading(true);
+
+      const response = await confirmGuestService(guest.token, data.email);
+
+      console.log(response);
+
+      alert("Confirmación enviada 🎉");
+      navigate(`/confirm/${guest.token}`, { replace: true });
+    } catch (error) {
+      console.error(error);
+      alert("Error al confirmar");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,7 +69,7 @@ export default function Confirm() {
         </h2>
 
         <p className="text-gray-600 mb-6">
-          <span className="font-semibold">{guest?.nombre}</span>, con mucha
+          <span className="font-semibold">{guest?.name}</span>, con mucha
           alegría queremos invitarte a celebrar nuestro casamiento.
         </p>
 
@@ -64,7 +83,10 @@ export default function Confirm() {
         />
 
         {/* Botón */}
-        <Button text="Confirmar asistencia" type="submit" />
+        <Button
+          text={loading ? "Enviando..." : "Confirmar asistencia"}
+          type="submit"
+        />
       </div>
     </form>
   );

@@ -10,7 +10,7 @@ use App\Http\Controllers\ReservationController;
 
 
 Route::get('/verifyGuest/{token}', [InvitacionController::class, 'getVerifyGuest']);
-Route::post('/invitacion/confirmar', [InvitacionController::class, 'Confirm']);
+Route::post('/confirm', [InvitacionController::class, 'getConfirm']);
 
 Route::middleware(['invitado.token', 'role:novio'])
     ->prefix('admin')

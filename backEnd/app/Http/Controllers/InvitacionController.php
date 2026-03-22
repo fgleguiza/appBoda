@@ -11,9 +11,6 @@ use App\Enums\HttpsCodeEnum;
 
 class InvitacionController extends Controller
 {
-
-
-
     /**
      * Validar invitación (cuando entra al link)
      */
@@ -38,7 +35,8 @@ class InvitacionController extends Controller
             'nombre' => $guestWanted->nombre_invitado,
             'confirmado' => $guestWanted->confirmado,
             'role' => $guestWanted->role,
-            'estado_confirmacion' => $stateConfirmation
+            'estado_confirmacion' => $stateConfirmation,
+            'token' => $guestWanted->token
         ]);
     }
 
@@ -49,8 +47,7 @@ class InvitacionController extends Controller
     }
 
 
-
-    public function confirm(Request $request)
+    public function getConfirm(Request $request)
     {
         $request->validate([
             'token' => 'required',
@@ -63,21 +60,18 @@ class InvitacionController extends Controller
             return ResponseHelper::response(HttpsCodeEnum::NOT_FOUND);
         }
 
+        $message = 'Este invitado ya ha confirmado su asistencia';
         if ($guest->confirmado) {
-            return ResponseHelper::response(
-                HttpsCodeEnum::ALREADY_EXISTS,
-                ['mensaje' => 'Ya habías confirmado asistencia']
-            );
+            return ResponseHelper::response(HttpsCodeEnum::SUCCESS, $message);
         }
+
         $guest->email_invitado = $request->email;
         $guest->confirmado = true;
         $guest->fecha_confirmacion = now();
         $guest->save();
 
-        return ResponseHelper::response(
-            HttpsCodeEnum::SUCCESS,
-            ['mensaje' => 'Confirmación exitosa']
-        );
+        $message = 'Confirmación exitosa';
+        return ResponseHelper::response(HttpsCodeEnum::SUCCESS, $message);
     }
 
     /**
