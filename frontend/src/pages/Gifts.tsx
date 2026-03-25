@@ -16,7 +16,7 @@ type Gift = {
 export default function Gifts() {
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(4); // mock por ahora
+  const [totalPages] = useState(4); // mock por ahora
 
   useEffect(() => {
     // 🔥 simulando llamada a API con page

@@ -6,6 +6,7 @@ interface InputProps {
   placeholder?: string;
   register: UseFormRegisterReturn;
   error?: string;
+  required?: boolean;
 }
 
 export default function Input({
@@ -14,20 +15,25 @@ export default function Input({
   placeholder,
   register,
   error,
+  required,
 }: InputProps) {
   return (
-    <div className="flex flex-col gap-1 mb-4">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+    <div className="flex flex-col gap-2 mb-4">
+      <label className="text-sm font-medium text-[#2c3e50]">
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </label>
 
       <input
         type={type}
         placeholder={placeholder}
         {...register}
-        className="border border-gray-300 rounded-lg px-3 py-2 
-        focus:outline-none focus:ring-2 focus:ring-rose-400"
+        className="border border-[#e8d5c4] rounded-lg px-4 py-2 bg-white text-gray-700
+        focus:outline-none focus:ring-2 focus:ring-[#b86b4b] focus:border-transparent
+        transition-all"
       />
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error && <p className="text-red-500 text-xs font-medium">{error}</p>}
     </div>
   );
 }
