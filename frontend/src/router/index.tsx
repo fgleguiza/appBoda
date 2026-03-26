@@ -1,10 +1,13 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "../context/AuthContext";
 
 // 🌐 PUBLIC (WEB)
 import Home from "../pages/Home";
 import Gifts from "../pages/Gifts";
-import SaveToDate from "../pages/saveToDate";
-import InvitationGuard from "../guards/InvitationGuard";
+import NotFound from "../pages/NotFound";
+import { TokenGuard } from "../guards/TokenGuard";
+import { HomeGuard } from "../guards/HomeGuard";
+import { AdminTokenGuard } from "../guards/AdminTokenGuard";
 
 // 🔒 ADMIN
 import AdminLayout from "../admin/layout/AdminLayout";
@@ -15,44 +18,59 @@ import GiftsPage from "../admin/pages/GiftsPage";
 export default function Router() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* ==================== */}
-        {/* 🌐 PUBLIC ROUTES */}
-        {/* ==================== */}
+      <AuthProvider>
+        <Routes>
+          {/* ==================== */}
+          {/* � INVITADO ROUTES (requiere token) */}
+          {/* ==================== */}
 
-        <Route
-          path="/confirm/:token"
-          element={
-            <InvitationGuard>
-              <SaveToDate />
-            </InvitationGuard>
-          }
-        />
+          {/* Página de inicio con token compartible (verifica y guarda token) */}
+          <Route
+            path="/home/:token"
+            element={
+              <HomeGuard>
+                <Home />
+              </HomeGuard>
+            }
+          />
 
-        <Route path="/regalos/" element={<Gifts />} />
-        <Route path="/home/" element={<Home />} />
+          {/* Regalos (accedido con token en URL) */}
+          <Route
+            path="/regalos/:token"
+            element={
+              <TokenGuard requiredRole="invitado">
+                <Gifts />
+              </TokenGuard>
+            }
+          />
 
-        <Route
-          path="/invitacion-invalida"
-          element={<div>Invitación inválida</div>}
-        />
+          {/* ==================== */}
+          {/* 🔐 ADMIN ROUTES (requiere token + role = "novio") */}
+          {/* ==================== */}
 
-        {/* ==================== */}
-        {/* 🔒 ADMIN ROUTES */}
-        {/* ==================== */}
+          <Route
+            path="/admin/:token"
+            element={
+              <AdminTokenGuard>
+                <AdminLayout />
+              </AdminTokenGuard>
+            }
+          >
+            <Route path="invitados" element={<GuestsPage />} />
+            <Route path="categorias" element={<CategoriesPage />} />
+            <Route path="regalos" element={<GiftsPage />} />
+          </Route>
 
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="invitados" element={<GuestsPage />} />
-          <Route path="categorias" element={<CategoriesPage />} />
-          <Route path="regalos" element={<GiftsPage />} />
-        </Route>
+          {/* ==================== */}
+          {/* ❌ ERROR PAGES */}
+          {/* ==================== */}
 
-        {/* ==================== */}
-        {/* ❌ FALLBACK */}
-        {/* ==================== */}
+          <Route path="/404" element={<NotFound />} />
 
-        <Route path="*" element={<div>404 - Not Found</div>} />
-      </Routes>
+          {/* Fallback: cualquier ruta desconocida */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

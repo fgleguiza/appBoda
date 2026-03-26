@@ -14,7 +14,7 @@ export default function Hero() {
       <div className="absolute inset-0 bg-black/40" />
 
       <div className="relative z-10">
-        <h1 className="text-5xl md:text-7xl font-light tracking-wide">
+        <h1 className="text-5xl md:text-7xl font-[Great_Vibes] tracking-wide">
           Facu & Aldi
         </h1>
         <Countdown />

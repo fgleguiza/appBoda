@@ -13,11 +13,17 @@ export default function Location() {
 
       <div className="relative z-10 w-full py-16 px-6 md:px-12">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl mb-6 font-semibold">Ubicación</h2>
+          <h2 className="text-4xl md:text-5xl mb-6 font-[Great_Vibes] text-white">
+            Ubicación
+          </h2>
 
           <div className="px-4 py-2 rounded-xl bg-white/30 backdrop-blur-md shadow-md inline-block">
-            <p className="text-lg">📍 Salón Los Robles</p>
-            <p className="text-sm">Buenos Aires, Argentina</p>
+            <p className="font-[Cormorant_Garamond] text-lg">
+              📍 Salón Los Robles
+            </p>
+            <p className="font-[Cormorant_Garamond] text-sm">
+              Buenos Aires, Argentina
+            </p>
           </div>
         </div>
       </div>

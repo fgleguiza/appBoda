@@ -1,6 +1,8 @@
 import { LuGift, LuExternalLink } from "react-icons/lu";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function GiftList() {
+  const { token } = useAuth();
   return (
     <section className="w-full py-24 px-6 md:px-12 bg-[#EACB91]">
       <div className="max-w-5xl mx-auto text-center">
@@ -27,8 +29,8 @@ export default function GiftList() {
           </div>
 
           <a
-            href="/regalos"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#b86b4b] text-white font-[Cormorant_Garamond] text-base shadow-md hover:scale-105 hover:opacity-90 transition"
+            href={`/regalos/${token}`}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full backdrop-blur-md bg-[#b86b4b]/30 border border-[#b86b4b]/40 text-[#2c3e50] font-[Cormorant_Garamond] font-semibold text-base shadow-md hover:scale-105 hover:opacity-90 transition"
           >
             Ver lista de regalos
             <LuExternalLink />

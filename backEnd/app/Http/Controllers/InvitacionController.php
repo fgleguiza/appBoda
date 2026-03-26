@@ -32,7 +32,9 @@ class InvitacionController extends Controller
         $stateConfirmation = $guestWanted->confirmado ? 'confirmado' : 'pendiente';
         $message = 'Invitado encontrado correctamente';
         return ResponseHelper::response(HttpsCodeEnum::SUCCESS, $message,  [
+            'id' => $guestWanted->id,
             'nombre' => $guestWanted->nombre_invitado,
+            'email' => $guestWanted->email_invitado,
             'confirmado' => $guestWanted->confirmado,
             'role' => $guestWanted->role,
             'estado_confirmacion' => $stateConfirmation,
