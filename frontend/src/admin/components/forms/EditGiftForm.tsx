@@ -1,37 +1,41 @@
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Input from "../../../components/Input";
 import Button from "../../../components/Button";
+import type { Regalo, Categoria } from "../../../services/admin/adminService";
 
 const editGiftSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
-  category: z.string().min(1, "Selecciona una categoría"),
-  image: z.any().optional(),
+  description: z.string().optional(),
+  category_id: z.string().min(1, "Selecciona una categoría"),
+  type: z.enum(["basic", "special"]),
+  max_quantity: z.string().min(1, "La cantidad máxima es requerida"),
 });
 
 type EditGiftFormData = z.infer<typeof editGiftSchema>;
 
 interface EditGiftFormProps {
-  gift: {
-    id: number;
-    name: string;
-    category?: number;
-    imageUrl?: string;
-  };
-  categories: Array<{ id: number; name: string }>;
-  onSubmit: (data: EditGiftFormData & { imageFile?: File }) => void;
+  initialData: Regalo;
+  categories: Categoria[];
+  onSubmit: (data: FormData) => void;
   loading?: boolean;
   onCancel?: () => void;
 }
 
 export default function EditGiftForm({
-  gift,
+  initialData,
   categories,
   onSubmit,
   loading = false,
   onCancel,
 }: EditGiftFormProps) {
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    initialData.image_url || null
+  );
+
   const {
     register,
     handleSubmit,
@@ -39,14 +43,41 @@ export default function EditGiftForm({
   } = useForm<EditGiftFormData>({
     resolver: zodResolver(editGiftSchema),
     defaultValues: {
-      name: gift.name,
-      category: gift.category ? gift.category.toString() : "",
+      name: initialData.name,
+      description: initialData.description || "",
+      category_id: initialData.category_id.toString(),
+      type: initialData.type,
+      max_quantity: initialData.max_quantity.toString(),
     },
   });
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleFormSubmit = (data: EditGiftFormData) => {
-    const imageFile = (data.image as FileList)?.[0];
-    onSubmit({ ...data, imageFile });
+    const formData = new FormData();
+    formData.append("name", data.name);
+    if (data.description) {
+      formData.append("description", data.description);
+    }
+    formData.append("category_id", data.category_id);
+    formData.append("type", data.type);
+    formData.append("max_quantity", data.max_quantity);
+
+    if (selectedImage) {
+      formData.append("image", selectedImage);
+    }
+
+    onSubmit(formData);
   };
 
   return (
@@ -62,12 +93,19 @@ export default function EditGiftForm({
           required
         />
 
+        <Input
+          label="Descripción (opcional)"
+          placeholder="Descripción del regalo"
+          register={register("description")}
+          error={errors.description?.message}
+        />
+
         <div className="flex flex-col gap-2 mb-4">
           <label className="text-sm font-medium text-[#2c3e50]">
             Categoría <span className="text-red-500 ml-1">*</span>
           </label>
           <select
-            {...register("category")}
+            {...register("category_id")}
             className="border border-[#e8d5c4] rounded-lg px-4 py-2 bg-white text-gray-700
             focus:outline-none focus:ring-2 focus:ring-[#b86b4b] focus:border-transparent
             transition-all"
@@ -79,45 +117,63 @@ export default function EditGiftForm({
               </option>
             ))}
           </select>
-          {errors.category && (
+          {errors.category_id && (
             <p className="text-red-500 text-xs font-medium">
-              {errors.category.message}
+              {errors.category_id.message}
             </p>
           )}
         </div>
 
-        {gift.imageUrl && (
-          <div className="mb-4">
-            <p className="text-sm font-medium text-[#2c3e50] mb-2">
-              Imagen actual
+        <div className="flex flex-col gap-2 mb-4">
+          <label className="text-sm font-medium text-[#2c3e50]">
+            Tipo <span className="text-red-500 ml-1">*</span>
+          </label>
+          <select
+            {...register("type")}
+            className="border border-[#e8d5c4] rounded-lg px-4 py-2 bg-white text-gray-700
+            focus:outline-none focus:ring-2 focus:ring-[#b86b4b] focus:border-transparent
+            transition-all"
+          >
+            <option value="basic">Básico</option>
+            <option value="special">Especial</option>
+          </select>
+          {errors.type && (
+            <p className="text-red-500 text-xs font-medium">
+              {errors.type.message}
             </p>
-            <img
-              src={gift.imageUrl}
-              alt={gift.name}
-              className="w-24 h-24 object-cover rounded-lg border border-[#e8d5c4]"
-            />
-          </div>
-        )}
+          )}
+        </div>
+
+        <Input
+          label="Cantidad máxima"
+          type="number"
+          placeholder="Ej: 5"
+          register={register("max_quantity")}
+          error={errors.max_quantity?.message}
+          required
+        />
 
         <div className="flex flex-col gap-2 mb-4">
           <label className="text-sm font-medium text-[#2c3e50]">
-            Cambiar imagen (opcional)
+            Imagen del regalo (opcional)
           </label>
           <input
             type="file"
             accept="image/*"
-            {...register("image")}
+            onChange={handleImageChange}
             className="border border-[#e8d5c4] rounded-lg px-4 py-2 bg-white text-gray-700
             focus:outline-none focus:ring-2 focus:ring-[#b86b4b] focus:border-transparent
             transition-all file:mr-4 file:py-1 file:px-3 file:rounded file:border-0
             file:bg-[#e8d5c4] file:text-[#b86b4b] file:font-medium"
           />
-          {errors.image && (
-            <p className="text-red-500 text-xs font-medium">
-              {typeof errors.image.message === "string"
-                ? errors.image.message
-                : "Error en la imagen"}
-            </p>
+          {imagePreview && (
+            <div className="mt-2">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-32 h-32 object-cover rounded-lg border border-[#e8d5c4]"
+              />
+            </div>
           )}
         </div>
 

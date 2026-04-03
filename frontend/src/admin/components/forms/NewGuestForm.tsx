@@ -5,10 +5,9 @@ import Input from "../../../components/Input";
 import Button from "../../../components/Button";
 
 const newGuestSchema = z.object({
-  name: z.string().min(1, "El nombre es requerido"),
-  email: z.string().email("Email inválido"),
-  phone: z.string().optional(),
-  confirmed: z.boolean(),
+  nombre_invitado: z.string().min(1, "El nombre es requerido"),
+  email_invitado: z.string().email("Email inválido").optional().or(z.literal("")),
+  role: z.enum(["novio", "invitado"]).default("invitado"),
 });
 
 type NewGuestFormData = z.infer<typeof newGuestSchema>;
@@ -31,7 +30,7 @@ export default function NewGuestForm({
   } = useForm<NewGuestFormData>({
     resolver: zodResolver(newGuestSchema),
     defaultValues: {
-      confirmed: false,
+      role: "invitado",
     },
   });
 
@@ -45,40 +44,33 @@ export default function NewGuestForm({
         <Input
           label="Nombre completo"
           placeholder="Ej: Juan Pérez"
-          register={register("name")}
-          error={errors.name?.message}
+          register={register("nombre_invitado")}
+          error={errors.nombre_invitado?.message}
           required
         />
 
         <Input
-          label="Email"
+          label="Email (opcional)"
           type="email"
           placeholder="Ej: juan@example.com"
-          register={register("email")}
-          error={errors.email?.message}
-          required
+          register={register("email_invitado")}
+          error={errors.email_invitado?.message}
         />
 
-        <Input
-          label="Teléfono (opcional)"
-          placeholder="Ej: +54 9 11 23456789"
-          register={register("phone")}
-          error={errors.phone?.message}
-        />
-
-        <div className="flex items-center gap-3 mb-4 p-3 bg-[#f5e6da] rounded-lg border border-[#e8d5c4]">
-          <input
-            type="checkbox"
-            id="confirmed"
-            {...register("confirmed")}
-            className="w-4 h-4 rounded border-[#e8d5c4] text-[#b86b4b] focus:ring-[#b86b4b]"
-          />
-          <label
-            htmlFor="confirmed"
-            className="text-sm font-medium text-gray-700"
-          >
-            Marcar como confirmado
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Rol
           </label>
+          <select
+            {...register("role")}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b86b4b] focus:border-transparent"
+          >
+            <option value="invitado">Invitado</option>
+            <option value="novio">Novio (Admin)</option>
+          </select>
+          {errors.role && (
+            <p className="text-sm text-red-600">{errors.role.message}</p>
+          )}
         </div>
 
         <div className="flex gap-3 mt-6">

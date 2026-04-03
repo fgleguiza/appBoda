@@ -1,20 +1,24 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Input from "../../../components/Input";
 import Button from "../../../components/Button";
+import type { Categoria } from "../../../services/admin/adminService";
 
 const newGiftSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
-  category: z.string().min(1, "Selecciona una categoría"),
-  image: z.any().refine((file) => file?.length > 0, "La imagen es requerida"),
+  description: z.string().optional(),
+  category_id: z.string().min(1, "Selecciona una categoría"),
+  type: z.enum(["basic", "special"]).default("basic"),
+  max_quantity: z.string().min(1, "La cantidad máxima es requerida"),
 });
 
 type NewGiftFormData = z.infer<typeof newGiftSchema>;
 
 interface NewGiftFormProps {
-  categories: Array<{ id: number; name: string }>;
-  onSubmit: (data: NewGiftFormData & { imageFile: File }) => void;
+  categories: Categoria[];
+  onSubmit: (data: FormData) => void;
   loading?: boolean;
   onCancel?: () => void;
 }
@@ -25,17 +29,47 @@ export default function NewGiftForm({
   loading = false,
   onCancel,
 }: NewGiftFormProps) {
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<NewGiftFormData>({
     resolver: zodResolver(newGiftSchema),
+    defaultValues: {
+      type: "basic",
+    },
   });
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleFormSubmit = (data: NewGiftFormData) => {
-    const imageFile = (data.image as FileList)[0];
-    onSubmit({ ...data, imageFile });
+    const formData = new FormData();
+    formData.append("name", data.name);
+    if (data.description) {
+      formData.append("description", data.description);
+    }
+    formData.append("category_id", data.category_id);
+    formData.append("type", data.type);
+    formData.append("max_quantity", data.max_quantity);
+
+    if (selectedImage) {
+      formData.append("image", selectedImage);
+    }
+
+    onSubmit(formData);
   };
 
   return (
@@ -51,12 +85,19 @@ export default function NewGiftForm({
           required
         />
 
+        <Input
+          label="Descripción (opcional)"
+          placeholder="Descripción del regalo"
+          register={register("description")}
+          error={errors.description?.message}
+        />
+
         <div className="flex flex-col gap-2 mb-4">
           <label className="text-sm font-medium text-[#2c3e50]">
             Categoría <span className="text-red-500 ml-1">*</span>
           </label>
           <select
-            {...register("category")}
+            {...register("category_id")}
             className="border border-[#e8d5c4] rounded-lg px-4 py-2 bg-white text-gray-700
             focus:outline-none focus:ring-2 focus:ring-[#b86b4b] focus:border-transparent
             transition-all"
@@ -68,32 +109,63 @@ export default function NewGiftForm({
               </option>
             ))}
           </select>
-          {errors.category && (
+          {errors.category_id && (
             <p className="text-red-500 text-xs font-medium">
-              {errors.category.message}
+              {errors.category_id.message}
             </p>
           )}
         </div>
 
         <div className="flex flex-col gap-2 mb-4">
           <label className="text-sm font-medium text-[#2c3e50]">
-            Imagen del regalo <span className="text-red-500 ml-1">*</span>
+            Tipo <span className="text-red-500 ml-1">*</span>
+          </label>
+          <select
+            {...register("type")}
+            className="border border-[#e8d5c4] rounded-lg px-4 py-2 bg-white text-gray-700
+            focus:outline-none focus:ring-2 focus:ring-[#b86b4b] focus:border-transparent
+            transition-all"
+          >
+            <option value="basic">Básico</option>
+            <option value="special">Especial</option>
+          </select>
+          {errors.type && (
+            <p className="text-red-500 text-xs font-medium">
+              {errors.type.message}
+            </p>
+          )}
+        </div>
+
+        <Input
+          label="Cantidad máxima"
+          type="number"
+          placeholder="Ej: 5"
+          register={register("max_quantity")}
+          error={errors.max_quantity?.message}
+          required
+        />
+
+        <div className="flex flex-col gap-2 mb-4">
+          <label className="text-sm font-medium text-[#2c3e50]">
+            Imagen del regalo (opcional)
           </label>
           <input
             type="file"
             accept="image/*"
-            {...register("image")}
+            onChange={handleImageChange}
             className="border border-[#e8d5c4] rounded-lg px-4 py-2 bg-white text-gray-700
             focus:outline-none focus:ring-2 focus:ring-[#b86b4b] focus:border-transparent
             transition-all file:mr-4 file:py-1 file:px-3 file:rounded file:border-0
             file:bg-[#e8d5c4] file:text-[#b86b4b] file:font-medium"
           />
-          {errors.image && (
-            <p className="text-red-500 text-xs font-medium">
-              {typeof errors.image.message === "string"
-                ? errors.image.message
-                : "Error en la imagen"}
-            </p>
+          {imagePreview && (
+            <div className="mt-2">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-32 h-32 object-cover rounded-lg border border-[#e8d5c4]"
+              />
+            </div>
           )}
         </div>
 

@@ -16,13 +16,16 @@ class Gift extends Model
         'reserved_quantity'
     ];
 
-    protected $appends = ['image_url'];
+    protected $appends = ['image_url', 'available_quantity'];
 
     public function getImageUrlAttribute()
     {
-        return $this->image
-            ? asset('storage/' . $this->image)
-            : null;
+        if (!$this->image) {
+            return null;
+        }
+        
+        $apiUrl = config('app.url', 'http://localhost:8000');
+        return $apiUrl . '/api/storage/' . $this->image;
     }
 
 

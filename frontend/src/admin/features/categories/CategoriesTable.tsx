@@ -1,22 +1,24 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "../../components/table/DataTable";
 import TableActions from "../../components/table/TableActions";
-
-type Category = {
-  id: number;
-  name: string;
-};
+import type { Categoria } from "../../../services/admin/adminService";
 
 type Props = {
-  data: Category[];
-  onEdit?: (category: Category) => void;
+  data: Categoria[];
+  onEdit?: (category: Categoria) => void;
+  onDelete?: (category: Categoria) => void;
 };
 
-export default function CategoriesTable({ data, onEdit }: Props) {
-  const columns: ColumnDef<Category>[] = [
+export default function CategoriesTable({ data, onEdit, onDelete }: Props) {
+  const columns: ColumnDef<Categoria>[] = [
     {
       accessorKey: "name",
       header: "Nombre",
+    },
+    {
+      accessorKey: "description",
+      header: "Descripción",
+      cell: ({ row }) => row.original.description || "Sin descripción",
     },
     {
       id: "actions",
@@ -24,7 +26,7 @@ export default function CategoriesTable({ data, onEdit }: Props) {
       cell: ({ row }) => (
         <TableActions
           onEdit={() => onEdit?.(row.original)}
-          onDelete={() => console.log("delete", row.original)}
+          onDelete={() => onDelete?.(row.original)}
         />
       ),
     },

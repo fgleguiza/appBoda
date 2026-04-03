@@ -8,6 +8,7 @@ import NotFound from "../pages/NotFound";
 import { TokenGuard } from "../guards/TokenGuard";
 import { HomeGuard } from "../guards/HomeGuard";
 import { AdminTokenGuard } from "../guards/AdminTokenGuard";
+import GuestLayout from "../layout/GuestLayout";
 
 // 🔒 ADMIN
 import AdminLayout from "../admin/layout/AdminLayout";
@@ -39,7 +40,9 @@ export default function Router() {
             path="/regalos/:token"
             element={
               <TokenGuard requiredRole="invitado">
-                <Gifts />
+                <GuestLayout>
+                  <Gifts />
+                </GuestLayout>
               </TokenGuard>
             }
           />

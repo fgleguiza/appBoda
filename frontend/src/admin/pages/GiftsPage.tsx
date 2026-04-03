@@ -1,61 +1,63 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GiftsTable from "../features/gifts/GiftsTable";
 import Modal from "../components/Modal";
 import NewGiftForm from "../components/forms/NewGiftForm";
 import EditGiftForm from "../components/forms/EditGiftForm";
 import Toast from "../components/Toast";
-
-type GiftItem = {
-  id: number;
-  name: string;
-  price: number;
-  reserved: boolean;
-  category?: number;
-  imageUrl?: string;
-};
+import {
+  getRegalosService,
+  createRegaloService,
+  updateRegaloService,
+  deleteRegaloService,
+  getCategoriasService,
+  type Regalo,
+  type Categoria,
+} from "../../services/admin/adminService";
 
 export default function GiftsPage() {
+  const [gifts, setGifts] = useState<Regalo[]>([]);
+  const [categories, setCategories] = useState<Categoria[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [editingGift, setEditingGift] = useState<GiftItem | null>(null);
+  const [editingGift, setEditingGift] = useState<Regalo | null>(null);
+  const [loadingData, setLoadingData] = useState(true);
 
-  // Mock de categorías - en producción vendrían de una API
-  const categories = [
-    { id: 1, name: "Electrodomésticos" },
-    { id: 2, name: "Hogar" },
-    { id: 3, name: "Experiencias" },
-  ];
+  // Cargar regalos y categorías al montar el componente
+  useEffect(() => {
+    loadData();
+  }, []);
 
-  const data = [
-    {
-      id: 1,
-      name: "Tostadora",
-      price: 15000,
-      reserved: false,
-    },
-    {
-      id: 2,
-      name: "Cena romántica",
-      price: 30000,
-      reserved: true,
-    },
-  ];
+  const loadData = async () => {
+    try {
+      setLoadingData(true);
+      const [giftsData, categoriesData] = await Promise.all([
+        getRegalosService(),
+        getCategoriasService(),
+      ]);
+      setGifts(giftsData);
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error("Error cargando datos:", error);
+      setToastMessage("Error al cargar los datos");
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
-  const handleSubmit = async (formData: any) => {
+  const handleSubmit = async (formData: FormData) => {
     try {
       setLoading(true);
       if (editingGift) {
-        console.log("Editar regalo:", { id: editingGift.id, ...formData });
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulación
+        await updateRegaloService(editingGift.id, formData);
         setToastMessage("Regalo actualizado exitosamente");
       } else {
-        console.log("Nuevo regalo:", formData);
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulación
+        await createRegaloService(formData);
         setToastMessage("Regalo creado exitosamente");
       }
       setIsModalOpen(false);
       setEditingGift(null);
+      await loadData(); // Recargar la lista
     } catch (error) {
       console.error(error);
       setToastMessage("Error al guardar el regalo");
@@ -64,54 +66,72 @@ export default function GiftsPage() {
     }
   };
 
-  const handleEdit = (gift: GiftItem) => {
+  const handleEdit = (gift: Regalo) => {
     setEditingGift(gift);
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingGift(null);
+  const handleDelete = async (gift: Regalo) => {
+    if (!confirm(`¿Estás seguro de eliminar el regalo "${gift.name}"?`)) {
+      return;
+    }
+
+    try {
+      await deleteRegaloService(gift.id);
+      setToastMessage("Regalo eliminado exitosamente");
+      await loadData(); // Recargar la lista
+    } catch (error) {
+      console.error("Error eliminando regalo:", error);
+      setToastMessage("Error al eliminar el regalo");
+    }
   };
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-light text-[#2c3e50] mb-2">Regalos</h1>
-          <p className="text-[#b86b4b] text-sm">
-            Administra la lista de regalos
-          </p>
-        </div>
+  if (loadingData) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b86b4b]"></div>
+      </div>
+    );
+  }
 
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Gestión de Regalos</h1>
         <button
-          onClick={() => {
-            setEditingGift(null);
-            setIsModalOpen(true);
-          }}
-          className="bg-[#b86b4b] text-white px-6 py-2 rounded-lg hover:bg-[#a35d3d] transition-colors font-medium text-sm"
+          onClick={() => setIsModalOpen(true)}
+          className="bg-[#b86b4b] text-white px-4 py-2 rounded-lg hover:bg-[#a35d3d] transition-colors"
         >
-          + Nuevo
+          Agregar Regalo
         </button>
       </div>
 
-      <GiftsTable data={data} onEdit={handleEdit} />
+      <GiftsTable
+        data={gifts}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingGift(null);
+        }}
+        title={editingGift ? "Editar Regalo" : "Nuevo Regalo"}
+      >
         {editingGift ? (
           <EditGiftForm
-            gift={editingGift}
+            initialData={editingGift}
             categories={categories}
             onSubmit={handleSubmit}
             loading={loading}
-            onCancel={handleCloseModal}
           />
         ) : (
           <NewGiftForm
             categories={categories}
             onSubmit={handleSubmit}
             loading={loading}
-            onCancel={handleCloseModal}
           />
         )}
       </Modal>

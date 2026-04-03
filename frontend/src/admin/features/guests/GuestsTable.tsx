@@ -9,14 +9,21 @@ type Guest = {
   name: string;
   email: string;
   confirmed: boolean;
+  token: string;
 };
 
 export default function GuestsTable({
   data,
   onEdit,
+  onDelete,
+  onCopyLink,
+  onCopyGiftList,
 }: {
   data: Guest[];
   onEdit?: (guest: Guest) => void;
+  onDelete?: (guest: Guest) => void;
+  onCopyLink?: (guest: Guest) => void;
+  onCopyGiftList?: (guest: Guest) => void;
 }) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -45,18 +52,36 @@ export default function GuestsTable({
       ),
     },
     {
+      id: "web",
+      header: "Web",
+      cell: ({ row }) => (
+        <button
+          onClick={() => onCopyLink?.(row.original)}
+          className="px-3 py-1 text-xs bg-white text-[#b86b4b] rounded-md hover:bg-[#f5e6da] transition-colors font-medium border border-[#e8d5c4]"
+        >
+          Web
+        </button>
+      ),
+    },
+    {
+      id: "gift-list",
+      header: "Lista de regalos",
+      cell: ({ row }) => (
+        <button
+          onClick={() => onCopyGiftList?.(row.original)}
+          className="px-3 py-1 text-xs bg-[#e8d5c4] text-[#b86b4b] rounded-md hover:bg-[#d4c4b4] transition-colors font-medium"
+        >
+          Lista de regalos
+        </button>
+      ),
+    },
+    {
       id: "actions",
       header: "Acciones",
       cell: ({ row }) => (
         <TableActions
           onEdit={() => onEdit?.(row.original)}
-          onDelete={() => console.log("delete", row.original)}
-          onCopy={() => {
-            navigator.clipboard.writeText(
-              `https://tuapp.com/invitacion/${row.original.id}`,
-            );
-            setToastMessage("Enlace de invitación copiado");
-          }}
+          onDelete={() => onDelete?.(row.original)}
         />
       ),
     },

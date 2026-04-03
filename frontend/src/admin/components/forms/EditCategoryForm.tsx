@@ -12,10 +12,9 @@ const editCategorySchema = z.object({
 type EditCategoryFormData = z.infer<typeof editCategorySchema>;
 
 interface EditCategoryFormProps {
-  category: {
-    id: number;
+  initialData: {
     name: string;
-    description?: string;
+    description: string;
   };
   onSubmit: (data: EditCategoryFormData) => void;
   loading?: boolean;
@@ -23,7 +22,7 @@ interface EditCategoryFormProps {
 }
 
 export default function EditCategoryForm({
-  category,
+  initialData,
   onSubmit,
   loading = false,
   onCancel,
@@ -35,8 +34,8 @@ export default function EditCategoryForm({
   } = useForm<EditCategoryFormData>({
     resolver: zodResolver(editCategorySchema),
     defaultValues: {
-      name: category.name,
-      description: category.description || "",
+      name: initialData.name,
+      description: initialData.description || "",
     },
   });
 

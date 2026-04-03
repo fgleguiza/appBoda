@@ -1,47 +1,62 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CategoriesTable from "../features/categories/CategoriesTable";
 import Modal from "../components/Modal";
 import NewCategoryForm from "../components/forms/NewCategoryForm";
 import EditCategoryForm from "../components/forms/EditCategoryForm";
 import Toast from "../components/Toast";
-
-type CategoryItem = {
-  id: number;
-  name: string;
-  description?: string;
-};
+import {
+  getCategoriasService,
+  createCategoriaService,
+  updateCategoriaService,
+  deleteCategoriaService,
+  type Categoria,
+} from "../../services/admin/adminService";
 
 export default function CategoriesPage() {
+  const [categories, setCategories] = useState<Categoria[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<CategoryItem | null>(
-    null,
-  );
+  const [editingCategory, setEditingCategory] = useState<Categoria | null>(null);
+  const [loadingData, setLoadingData] = useState(true);
 
-  const data = [
-    { id: 1, name: "Electrodomésticos" },
-    { id: 2, name: "Hogar" },
-    { id: 3, name: "Experiencias" },
-  ];
+  // Cargar categorías al montar el componente
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoadingData(true);
+      const data = await getCategoriasService();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error cargando categorías:", error);
+      setToastMessage("Error al cargar las categorías");
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   const handleSubmit = async (formData: any) => {
     try {
       setLoading(true);
       if (editingCategory) {
-        console.log("Editar categoría:", {
-          id: editingCategory.id,
-          ...formData,
+        await updateCategoriaService(editingCategory.id, {
+          name: formData.name,
+          description: formData.description,
         });
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulación
         setToastMessage("Categoría actualizada exitosamente");
       } else {
-        console.log("Nueva categoría:", formData);
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulación
+        await createCategoriaService({
+          name: formData.name,
+          description: formData.description,
+        });
         setToastMessage("Categoría creada exitosamente");
       }
       setIsModalOpen(false);
       setEditingCategory(null);
+      await loadCategories(); // Recargar la lista
     } catch (error) {
       console.error(error);
       setToastMessage("Error al guardar la categoría");
@@ -50,55 +65,71 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleEdit = (category: CategoryItem) => {
+  const handleEdit = (category: Categoria) => {
     setEditingCategory(category);
     setIsModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingCategory(null);
+  const handleDelete = async (category: Categoria) => {
+    if (!confirm(`¿Estás seguro de eliminar la categoría "${category.name}"?`)) {
+      return;
+    }
+
+    try {
+      await deleteCategoriaService(category.id);
+      setToastMessage("Categoría eliminada exitosamente");
+      await loadCategories(); // Recargar la lista
+    } catch (error) {
+      console.error("Error eliminando categoría:", error);
+      setToastMessage("Error al eliminar la categoría");
+    }
   };
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-light text-[#2c3e50] mb-2">
-            Categorías
-          </h1>
-          <p className="text-[#b86b4b] text-sm">
-            Organiza los regalos por categorías
-          </p>
-        </div>
+  if (loadingData) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b86b4b]"></div>
+      </div>
+    );
+  }
 
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Gestión de Categorías</h1>
         <button
-          onClick={() => {
-            setEditingCategory(null);
-            setIsModalOpen(true);
-          }}
-          className="bg-[#b86b4b] text-white px-6 py-2 rounded-lg hover:bg-[#a35d3d] transition-colors font-medium text-sm"
+          onClick={() => setIsModalOpen(true)}
+          className="bg-[#b86b4b] text-white px-4 py-2 rounded-lg hover:bg-[#a35d3d] transition-colors"
         >
-          + Nueva
+          Agregar Categoría
         </button>
       </div>
 
-      <CategoriesTable data={data} onEdit={handleEdit} />
+      <CategoriesTable
+        data={categories}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
-      <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingCategory(null);
+        }}
+        title={editingCategory ? "Editar Categoría" : "Nueva Categoría"}
+      >
         {editingCategory ? (
           <EditCategoryForm
-            category={editingCategory}
+            initialData={{
+              name: editingCategory.name,
+              description: editingCategory.description || "",
+            }}
             onSubmit={handleSubmit}
             loading={loading}
-            onCancel={handleCloseModal}
           />
         ) : (
-          <NewCategoryForm
-            onSubmit={handleSubmit}
-            loading={loading}
-            onCancel={handleCloseModal}
-          />
+          <NewCategoryForm onSubmit={handleSubmit} loading={loading} />
         )}
       </Modal>
 

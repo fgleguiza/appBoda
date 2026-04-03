@@ -5,21 +5,20 @@ import Input from "../../../components/Input";
 import Button from "../../../components/Button";
 
 const editGuestSchema = z.object({
-  name: z.string().min(1, "El nombre es requerido"),
-  email: z.string().email("Email inválido"),
-  phone: z.string().optional(),
-  confirmed: z.boolean(),
+  nombre_invitado: z.string().min(1, "El nombre es requerido"),
+  email_invitado: z.string().email("Email inválido").optional().or(z.literal("")),
+  role: z.enum(["novio", "invitado"]),
+  confirmado: z.boolean(),
 });
 
 type EditGuestFormData = z.infer<typeof editGuestSchema>;
 
 interface EditGuestFormProps {
-  guest: {
-    id: number;
-    name: string;
-    email: string;
-    phone?: string;
-    confirmed: boolean;
+  initialData: {
+    nombre_invitado: string;
+    email_invitado: string;
+    role: "novio" | "invitado";
+    confirmado: boolean;
   };
   onSubmit: (data: EditGuestFormData) => void;
   loading?: boolean;
@@ -27,7 +26,7 @@ interface EditGuestFormProps {
 }
 
 export default function EditGuestForm({
-  guest,
+  initialData,
   onSubmit,
   loading = false,
   onCancel,
@@ -39,10 +38,10 @@ export default function EditGuestForm({
   } = useForm<EditGuestFormData>({
     resolver: zodResolver(editGuestSchema),
     defaultValues: {
-      name: guest.name,
-      email: guest.email,
-      phone: guest.phone || "",
-      confirmed: guest.confirmed,
+      nombre_invitado: initialData.nombre_invitado,
+      email_invitado: initialData.email_invitado,
+      role: initialData.role,
+      confirmado: initialData.confirmado,
     },
   });
 
@@ -56,36 +55,44 @@ export default function EditGuestForm({
         <Input
           label="Nombre completo"
           placeholder="Ej: Juan Pérez"
-          register={register("name")}
-          error={errors.name?.message}
+          register={register("nombre_invitado")}
+          error={errors.nombre_invitado?.message}
           required
         />
 
         <Input
-          label="Email"
+          label="Email (opcional)"
           type="email"
           placeholder="Ej: juan@example.com"
-          register={register("email")}
-          error={errors.email?.message}
-          required
+          register={register("email_invitado")}
+          error={errors.email_invitado?.message}
         />
 
-        <Input
-          label="Teléfono (opcional)"
-          placeholder="Ej: +54 9 11 23456789"
-          register={register("phone")}
-          error={errors.phone?.message}
-        />
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Rol
+          </label>
+          <select
+            {...register("role")}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#b86b4b] focus:border-transparent"
+          >
+            <option value="invitado">Invitado</option>
+            <option value="novio">Novio (Admin)</option>
+          </select>
+          {errors.role && (
+            <p className="text-sm text-red-600">{errors.role.message}</p>
+          )}
+        </div>
 
         <div className="flex items-center gap-3 mb-4 p-3 bg-[#f5e6da] rounded-lg border border-[#e8d5c4]">
           <input
             type="checkbox"
-            id="confirmed"
-            {...register("confirmed")}
+            id="confirmado"
+            {...register("confirmado")}
             className="w-4 h-4 rounded border-[#e8d5c4] text-[#b86b4b] focus:ring-[#b86b4b]"
           />
           <label
-            htmlFor="confirmed"
+            htmlFor="confirmado"
             className="text-sm font-medium text-gray-700"
           >
             Marcar como confirmado

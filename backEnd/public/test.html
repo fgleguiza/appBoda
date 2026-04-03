@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Image Loading</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        img { max-width: 300px; margin: 20px 0; border: 1px solid #ccc; }
+        .section { margin: 30px 0; padding: 20px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>🖼️ Testing Gift Images</h1>
+    
+    <div class="section">
+        <h2>Direct Image URL Test</h2>
+        <p>URL: http://localhost:8000/api/storage/gifts/PTBH3i7zayFDK5ngHkj4TxQ16zzn71om2epZRgYM.webp</p>
+        <img src="http://localhost:8000/api/storage/gifts/PTBH3i7zayFDK5ngHkj4TxQ16zzn71om2epZRgYM.webp" alt="Test Image" onerror="this.innerHTML='Failed to load'">
+    </div>
+
+    <div class="section">
+        <h2>API Endpoint Test</h2>
+        <button onclick="testAPI()">Test API Endpoint</button>
+        <pre id="apiResult"></pre>
+    </div>
+
+    <script>
+        async function testAPI() {
+            try {
+                const token = '006w6zZtOLeKn0tCtDWolJuUfQNynDArzYBtMqKl';
+                const response = await fetch('http://localhost:8000/api/regalos', {
+                    headers: {
+                        'X-Invitacion-Token': token
+                    }
+                });
+                const data = await response.json();
+                document.getElementById('apiResult').textContent = JSON.stringify(data[0], null, 2);
+            } catch (error) {
+                document.getElementById('apiResult').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
